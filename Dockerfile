@@ -1,50 +1,61 @@
-FROM python:3.11-slim
+FROM python:3.9-slim
 
-# Install dependencies
+# Install Chrome dependencies and Chromium
 RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    unzip \
-    gnupg \
+    chromium \
+    chromium-driver \
     fonts-liberation \
-    libnss3 \
-    libxss1 \
+    libappindicator3-1 \
     libasound2 \
-    libatk1.0-0 \
     libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcairo2 \
     libcups2 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libgbm1 \
+    libgcc1 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libstdc++6 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
     libxcomposite1 \
+    libxcursor1 \
     libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
     libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    wget \
     xdg-utils \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
-
-# Download and install a specific version of Chrome
-RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && apt-get update && apt-get install -y ./google-chrome-stable_current_amd64.deb \
-    && rm google-chrome-stable_current_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
 
-# Install a known compatible version of ChromeDriver
-RUN CHROMEDRIVER_VERSION="121.0.6063.56" \
-    && wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" \
-    && unzip chromedriver_linux64.zip \
-    && mv chromedriver /usr/local/bin/ \
-    && chmod +x /usr/local/bin/chromedriver \
-    && rm chromedriver_linux64.zip
+# Set Chrome binary location
+ENV CHROME_BIN=/usr/bin/chromium
+ENV CHROME_PATH=/usr/lib/chromium/
 
 # Set working directory
 WORKDIR /app
 
-# Copy project files
-COPY . /app
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Copy application code
+COPY . .
 
 # Expose port
 EXPOSE 10000
 
-# Start the server
+# Start application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000"]

@@ -7,3 +7,5 @@ yt-dlp
 qrcode
 Pillow
 selenium
+chromium-browser  # Add this
+chromedriver-binary  # Add this

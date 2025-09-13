@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: fastapi-classbot
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: CLASSBOT_USERNAME
+        sync: false
+      - key: CLASSBOT_PASSWORD
+        sync: false
