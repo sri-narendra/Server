@@ -11,21 +11,33 @@ router = APIRouter()
 
 def join_class(class_index=0, duration_seconds=7200):
     print(f"🕒 {datetime.datetime.now().strftime('%H:%M:%S')} - Attempting to join class {class_index + 1}")
+    
     opts = webdriver.ChromeOptions()
+    opts.add_argument("--headless=new")                # Run Chrome in headless mode
+    opts.add_argument("--no-sandbox")                 # Bypass OS security model
+    opts.add_argument("--disable-dev-shm-usage")      # Overcome limited resource problems
     opts.add_experimental_option("prefs", {
         "profile.default_content_setting_values.media_stream_mic": 2,
         "profile.default_content_setting_values.media_stream_camera": 2,
         "profile.default_content_setting_values.geolocation": 2,
         "profile.default_content_setting_values.sound": 2
     })
+    
     d = webdriver.Chrome(options=opts)
     w = WebDriverWait(d, 20)
 
     try:
         # Login
         d.get("https://myclass.lpu.in/")
-        w.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[2]/div/form/div[7]/input[1]'))).send_keys(os.getenv("CLASSBOT_USERNAME"))
-        d.find_element(By.XPATH,'/html/body/div[2]/div/form/div[7]/input[2]').send_keys(os.getenv("CLASSBOT_PASSWORD"))
+        username = os.getenv("CLASSBOT_USERNAME")
+        password = os.getenv("CLASSBOT_PASSWORD")
+
+        if not username or not password:
+            print("❌ Environment variables CLASSBOT_USERNAME or CLASSBOT_PASSWORD not set!")
+            return
+
+        w.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[2]/div/form/div[7]/input[1]'))).send_keys(username)
+        d.find_element(By.XPATH,'/html/body/div[2]/div/form/div[7]/input[2]').send_keys(password)
         d.find_element(By.XPATH,'/html/body/div[2]/div/form/div[8]/button').click()
 
         time.sleep(5)
@@ -45,6 +57,9 @@ def join_class(class_index=0, duration_seconds=7200):
         print(f"✅ Joined class {class_index + 1} (listen-only). Staying for {duration_seconds} seconds.")
         time.sleep(duration_seconds)
 
+    except Exception as e:
+        print(f"❌ Error while joining class {class_index + 1}: {e}")
+
     finally:
         d.quit()
         print("🔒 Browser closed after class.")
@@ -55,14 +70,12 @@ def schedule_classes(times, class_index=0, duration_seconds=7200):
         current_time = now.strftime("%H:%M")
         if current_time in times:
             join_class(class_index, duration_seconds)
-            time.sleep(60)  # avoid multiple triggers same minute
+            time.sleep(60)  # Avoid multiple triggers in the same minute
         time.sleep(5)
 
-# API endpoint
 @router.post("/start")
 async def start_scheduler():
     try:
-        # Run scheduler in background thread
         def runner():
             schedule_classes(["09:00"], class_index=0, duration_seconds=7200)
             schedule_classes(["13:00"], class_index=1, duration_seconds=7200)
