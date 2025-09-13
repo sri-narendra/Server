@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+aiofiles
+gTTS
+yt-dlp
+qrcode
+Pillow
+selenium
